@@ -67,15 +67,23 @@ public class Main extends javax.swing.JFrame {
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 
-    private void formWindowOpened(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowOpened
+    private void formWindowOpened(java.awt.event.WindowEvent evt) {
         try {
-            DatabaseConnection.getInstance().connectToDatabase();
-            Service.getInstance(txt).startServer();
-        } catch (SQLException e) {
-            txt.append("Error : " + e + "\n");
-        }
-    }//GEN-LAST:event_formWindowOpened
+            // *DB 연결 부분을 주석 처리해서 건너뛰기
+            // DatabaseConnection.getInstance().connectToDatabase();
+            // txt.append("Connect to Database ...\n");
 
+            // 채팅 서비스만 바로 시작
+            Service.getInstance(txt).startServer();
+
+            // 성공 메시지를 화면에 표시
+            txt.append("Server started in Memory-Only Mode (No Database)\n");
+            txt.append("Listening on port 9999...\n");
+
+        } catch (Exception e) {
+            txt.append("Error : " + e.getMessage() + "\n");
+        }
+    }
     /**
      * @param args the command line arguments
      */

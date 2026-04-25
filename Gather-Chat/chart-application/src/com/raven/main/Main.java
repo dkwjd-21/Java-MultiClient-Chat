@@ -27,12 +27,18 @@ public class Main extends javax.swing.JFrame {
         com.setMinimumSize(new Dimension(900, 500));
         com.setMaximumSize(Toolkit.getDefaultToolkit().getScreenSize());
         com.setSnapSize(new Dimension(10, 10));
-        login.setVisible(true);
+
+        login.setVisible(false);  // 로그인 창 숨기기
         loading.setVisible(false);
         vIew_Image.setVisible(false);
-        home.setVisible(false);
+        home.setVisible(true);    // 채팅 홈 화면 바로 보이기
+
         initEvent();
-        Service.getInstance().startServer();
+        Service.getInstance().startServer(); // 클라이언트 서비스 시작
+
+        // [중요] DB가 없으므로 임시 사용자 정보를 강제로 주입.
+        Model_User_Account fakeUser = new Model_User_Account(1, "Yuri", "Female", "", true);
+        Service.getInstance().setUser(fakeUser);
     }
 
     private void initEvent() {
