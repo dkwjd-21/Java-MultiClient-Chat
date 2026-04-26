@@ -37,8 +37,8 @@ public class Chat_Right extends javax.swing.JLayeredPane {
         txt.setEmoji(true, icon);
     }
 
-    public void setTime() {
-        txt.setTime("10:30 PM");    //  Testing
+    public void setTime(String time) {
+        txt.setTime(time);
     }
 
     @SuppressWarnings("unchecked")

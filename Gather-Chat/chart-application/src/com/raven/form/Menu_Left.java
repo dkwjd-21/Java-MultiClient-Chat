@@ -141,6 +141,15 @@ public class Menu_Left extends javax.swing.JPanel {
         System.out.println("로그: 유저 퇴장(ID: " + userID + ") - 리스트에서 제거됨");
     }
 
+    public String getUserNameById(int userID) {
+        for (Model_User_Account u : userAccount) {
+            if (u.getUserID() == userID) {
+                return u.getUserName();
+            }
+        }
+        return "알 수 없는 사용자"; // 명단에 없을 때 대비
+    }
+
     private void updateStatus(int id, boolean s) {
         Model_User_Account mySelf = Service.getInstance().getUser();
         List<Model_User_Account> pureOthers = new ArrayList<>();

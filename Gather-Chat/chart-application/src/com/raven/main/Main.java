@@ -4,6 +4,7 @@ import com.formdev.flatlaf.intellijthemes.FlatArcIJTheme;
 import com.raven.event.EventImageView;
 import com.raven.event.EventMain;
 import com.raven.event.PublicEvent;
+import com.raven.form.Menu_Left;
 import com.raven.model.Model_User_Account;
 import com.raven.service.Service;
 import com.raven.swing.ComponentResizer;
@@ -17,9 +18,16 @@ import javax.swing.JFrame;
 
 public class Main extends javax.swing.JFrame {
 
+    private static Main instance;
+
     public Main() {
+        instance = this;
         initComponents();
         init();
+    }
+
+    public static Menu_Left getMenuLeft() {
+        return instance.home.getMenuLeft(); // home 안에 있는 getMenuLeft() 호출
     }
 
     private void init() {
@@ -41,10 +49,15 @@ public class Main extends javax.swing.JFrame {
         initEvent();
 
         // [3] 닉네임 입력 및 로그인
+        /*
         String userName = javax.swing.JOptionPane.showInputDialog(this,
                 "Gather-Chat에 오신 것을 환영합니다!\n사용하실 닉네임을 입력해주세요.",
                 "입장하기",
                 javax.swing.JOptionPane.PLAIN_MESSAGE);
+         */
+
+        // [테스트용] 실행할 때마다 랜덤 이름으로 자동 입장
+        String userName = "TestUser_" + System.currentTimeMillis() % 1000;
 
         if (userName == null || userName.trim().isEmpty()) {
             userName = "익명유저" + (int)(Math.random() * 1000);

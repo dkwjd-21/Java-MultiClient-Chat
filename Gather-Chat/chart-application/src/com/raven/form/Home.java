@@ -6,6 +6,7 @@ import net.miginfocom.swing.MigLayout;
 public class Home extends javax.swing.JLayeredPane {
 
     private Chat chat;
+    private Menu_Left menuLeft;
 
     public Home() {
         initComponents();
@@ -17,8 +18,8 @@ public class Home extends javax.swing.JLayeredPane {
         // 왼쪽 메뉴 200px 고정, 채팅창 600px 고정, 나머지는 빈 공간(grow)
         setLayout(new MigLayout("fill, insets 10", "0[200!]15[600!]0[grow]", "0[fill]0"));
 
-        // 왼쪽 메뉴 추가
-        this.add(new Menu_Left());
+        menuLeft = new Menu_Left();
+        this.add(menuLeft);
 
         // 채팅창 추가
         chat = new Chat();
@@ -53,6 +54,10 @@ public class Home extends javax.swing.JLayeredPane {
             .addGap(0, 551, Short.MAX_VALUE)
         );
     }// </editor-fold>//GEN-END:initComponents
+
+    public Menu_Left getMenuLeft() {
+        return menuLeft; // GUI 빌더가 생성한 Menu_Left 변수명 (보통 menu_Left1 일 거예요)
+    }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     // End of variables declaration//GEN-END:variables

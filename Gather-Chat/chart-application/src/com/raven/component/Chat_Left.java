@@ -38,8 +38,12 @@ public class Chat_Left extends javax.swing.JLayeredPane {
         txt.setEmoji(false, icon);
     }
 
-    public void setTime() {
-        txt.setTime("10:30 PM");    //  Testing
+    public void setUserProfile(String user) {
+        txt.setUserProfile(user);
+    }
+
+    public void setTime(String time) {
+        txt.setTime(time);
     }
 
     @SuppressWarnings("unchecked")

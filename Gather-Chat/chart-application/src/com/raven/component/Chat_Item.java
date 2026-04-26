@@ -26,19 +26,22 @@ public class Chat_Item extends javax.swing.JLayeredPane {
         txt.setOpaque(false);
     }
 
+    // 상대방 유저 이름 설정 (말풍선 위에 배치)
     public void setUserProfile(String user) {
         JLayeredPane layer = new JLayeredPane();
-        layer.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        layer.setBorder(new EmptyBorder(10, 10, 0, 10));
+        layer.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        layer.setBorder(new EmptyBorder(5, 5, 0, 10));
+
         JButton cmd = new JButton(user);
         cmd.setCursor(new Cursor(Cursor.HAND_CURSOR));
         cmd.setBorder(null);
         cmd.setContentAreaFilled(false);
         cmd.setFocusable(false);
         cmd.setForeground(new Color(30, 121, 213));
-        cmd.setFont(new java.awt.Font("sansserif", 1, 13));
-        txt.setBorder(javax.swing.BorderFactory.createEmptyBorder(5, 10, 5, 10));
+        cmd.setFont(new java.awt.Font("맑은 고딕", 1, 13));
+
         layer.add(cmd);
+        // index 0에 추가하여 항상 텍스트(말풍선)보다 위에 오게 함
         add(layer, 0);
     }
 

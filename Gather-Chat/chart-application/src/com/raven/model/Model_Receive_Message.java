@@ -38,12 +38,14 @@ public class Model_Receive_Message {
         this.dataImage = dataImage;
     }
 
+
     public Model_Receive_Message(Object json) {
         JSONObject obj = (JSONObject) json;
         try {
             messageType = MessageType.toMessageType(obj.getInt("messageType"));
             fromUserID = obj.getInt("fromUserID");
             text = obj.getString("text");
+
             if (!obj.isNull("dataImage")) {
                 dataImage = new Model_Receive_Image(obj.get("dataImage"));
             }

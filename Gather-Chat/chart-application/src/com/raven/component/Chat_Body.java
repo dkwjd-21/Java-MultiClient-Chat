@@ -9,6 +9,9 @@ import java.awt.Adjustable;
 import java.awt.Color;
 import java.awt.event.AdjustmentEvent;
 import java.awt.event.AdjustmentListener;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 import javax.swing.JScrollBar;
 import net.miginfocom.swing.MigLayout;
 
@@ -20,91 +23,77 @@ public class Chat_Body extends javax.swing.JPanel {
     }
 
     private void init() {
-        body.setLayout(new MigLayout("fillx", "", "5[bottom]5"));
+        body.setLayout(new MigLayout("fillx, ins 0 30 0 30", "", "5[bottom]5"));
         sp.setVerticalScrollBar(new ScrollBar());
         sp.getVerticalScrollBar().setBackground(Color.WHITE);
+
+        // 배경 이미지 적용을 위해 투명하게 설정 가능
+        // body.setOpaque(false);
     }
 
+    private String getCurrentFullDateTime() {
+        return LocalDateTime.now().format(
+                DateTimeFormatter.ofPattern("yyyy년 MM월 dd일 a h:mm", Locale.KOREAN)
+        );
+    }
+
+    // 상대방 메시지 추가
     public void addItemLeft(Model_Receive_Message data) {
+        String fullTime = getCurrentFullDateTime();
+        Chat_Left item = new Chat_Left();
+
+        // 1. 서버에서 받은 '번호(ID)'로 '이름' 찾아오기
+        // Main을 통해 Menu_Left에 접근해서 해당 ID의 이름을 가져옵니다.
+        String userName = com.raven.main.Main.getMenuLeft().getUserNameById(data.getFromUserID());
+
         if (data.getMessageType() == MessageType.TEXT) {
-            Chat_Left item = new Chat_Left();
             item.setText(data.getText());
-            item.setTime();
-            body.add(item, "wrap, w 100::80%");
         } else if (data.getMessageType() == MessageType.EMOJI) {
-            Chat_Left item = new Chat_Left();
             item.setEmoji(Emogi.getInstance().getImoji(Integer.valueOf(data.getText())).getIcon());
-            item.setTime();
-            body.add(item, "wrap, w 100::80%");
         } else if (data.getMessageType() == MessageType.IMAGE) {
-            Chat_Left item = new Chat_Left();
             item.setText("");
             item.setImage(data.getDataImage());
-            item.setTime();
-            body.add(item, "wrap, w 100::80%");
         }
+
+        // 2. 공통 정보 세팅 (찾아온 userName을 직접 넣어줍니다)
+        item.setUserProfile(userName);
+        item.setTime(fullTime);
+
+        body.add(item, "wrap, w 100::80%, gaptop 10");
         repaint();
         revalidate();
     }
 
-    public void addItemLeft(String text, String user, String[] image) {
-        Chat_Left_With_Profile item = new Chat_Left_With_Profile();
-        item.setText(text);
-        item.setImage(image);
-        item.setTime();
-        item.setUserProfile(user);
-        body.add(item, "wrap, w 100::80%");
-        //  ::80% set max with 80%
-        body.repaint();
-        body.revalidate();
-    }
-
-    public void addItemFile(String text, String user, String fileName, String fileSize) {
-        Chat_Left_With_Profile item = new Chat_Left_With_Profile();
-        item.setText(text);
-        item.setFile(fileName, fileSize);
-        item.setTime();
-        item.setUserProfile(user);
-        body.add(item, "wrap, w 100::80%");
-        //  ::80% set max with 80%
-        body.repaint();
-        body.revalidate();
-    }
-
+    // 내가 보낸 메시지 추가
     public void addItemRight(Model_Send_Message data) {
+        String fullTime = getCurrentFullDateTime();
+        Chat_Right item = new Chat_Right();
+
         if (data.getMessageType() == MessageType.TEXT) {
-            Chat_Right item = new Chat_Right();
             item.setText(data.getText());
-            item.setTime();
-            body.add(item, "wrap, al right, w 100::80%");
         } else if (data.getMessageType() == MessageType.EMOJI) {
-            Chat_Right item = new Chat_Right();
             item.setEmoji(Emogi.getInstance().getImoji(Integer.valueOf(data.getText())).getIcon());
-            item.setTime();
-            body.add(item, "wrap, al right, w 100::80%");
         } else if (data.getMessageType() == MessageType.IMAGE) {
-            Chat_Right item = new Chat_Right();
             item.setText("");
             item.setImage(data.getFile());
-            item.setTime();
-            body.add(item, "wrap, al right, w 100::80%");
-
         }
+
+        item.setTime(fullTime);
+        body.add(item, "wrap, al right, w 100::80%");
+
         repaint();
         revalidate();
         scrollToBottom();
     }
 
-    public void addItemFileRight(String text, String fileName, String fileSize) {
-        Chat_Right item = new Chat_Right();
-        item.setText(text);
-        item.setFile(fileName, fileSize);
-        body.add(item, "wrap, al right, w 100::80%");
-        //  ::80% set max with 80%
-        body.repaint();
-        body.revalidate();
+    // 채팅창 초기화
+    public void clearChat() {
+        body.removeAll();
+        repaint();
+        revalidate();
     }
 
+    // 날짜 구분선 추가
     public void addDate(String date) {
         Chat_Date item = new Chat_Date();
         item.setDate(date);
@@ -113,14 +102,8 @@ public class Chat_Body extends javax.swing.JPanel {
         body.revalidate();
     }
 
-    public void clearChat() {
-        body.removeAll();
-        repaint();
-        revalidate();
-    }
-
     @SuppressWarnings("unchecked")
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">
     private void initComponents() {
 
         sp = new javax.swing.JScrollPane();
@@ -134,12 +117,12 @@ public class Chat_Body extends javax.swing.JPanel {
         javax.swing.GroupLayout bodyLayout = new javax.swing.GroupLayout(body);
         body.setLayout(bodyLayout);
         bodyLayout.setHorizontalGroup(
-            bodyLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 826, Short.MAX_VALUE)
+                bodyLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGap(0, 826, Short.MAX_VALUE)
         );
         bodyLayout.setVerticalGroup(
-            bodyLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 555, Short.MAX_VALUE)
+                bodyLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGap(0, 555, Short.MAX_VALUE)
         );
 
         sp.setViewportView(body);
@@ -147,14 +130,15 @@ public class Chat_Body extends javax.swing.JPanel {
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(sp)
+                layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addComponent(sp)
         );
         layout.setVerticalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(sp)
+                layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addComponent(sp)
         );
-    }// </editor-fold>//GEN-END:initComponents
+    }
+    // </editor-fold>
 
     private void scrollToBottom() {
         JScrollBar verticalBar = sp.getVerticalScrollBar();
@@ -169,8 +153,8 @@ public class Chat_Body extends javax.swing.JPanel {
         verticalBar.addAdjustmentListener(downScroller);
     }
 
-    // Variables declaration - do not modify//GEN-BEGIN:variables
+    // Variables declaration - do not modify
     private javax.swing.JPanel body;
     private javax.swing.JScrollPane sp;
-    // End of variables declaration//GEN-END:variables
+    // End of variables declaration
 }
