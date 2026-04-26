@@ -13,12 +13,20 @@ public class Home extends javax.swing.JLayeredPane {
     }
 
     private void init() {
-        setLayout(new MigLayout("fillx, filly", "0[200!]5[fill, 100%]5[200!]0", "0[fill]0"));
+        // 레이아웃 설정
+        // 왼쪽 메뉴 200px 고정, 채팅창 600px 고정, 나머지는 빈 공간(grow)
+        setLayout(new MigLayout("fill, insets 10", "0[200!]15[600!]0[grow]", "0[fill]0"));
+
+        // 왼쪽 메뉴 추가
         this.add(new Menu_Left());
+
+        // 채팅창 추가
         chat = new Chat();
         this.add(chat);
-        this.add(new Menu_Right());
-        chat.setVisible(false);
+
+        // [수정] 입장하자마자 광장 채팅방이 보이도록 설정
+        Model_User_Account community = new Model_User_Account(0, "Gather-Chat 광장", "", "", true);
+        setUser(community);
     }
 
     public void setUser(Model_User_Account user) {

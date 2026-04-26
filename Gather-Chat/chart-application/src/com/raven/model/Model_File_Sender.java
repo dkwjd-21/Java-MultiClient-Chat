@@ -149,7 +149,8 @@ public class Model_File_Sender {
                                 sendingFile();
                             } else {
                                 //  File send finish
-                                Service.getInstance().fileSendFinish(Model_File_Sender.this);
+                                // 주석 처리
+                                // Service.getInstance().fileSendFinish(Model_File_Sender.this);
                                 if (event != null) {
                                     event.onFinish();
                                 }

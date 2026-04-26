@@ -2,6 +2,8 @@ package com.raven.component;
 
 import com.raven.event.PublicEvent;
 import com.raven.model.Model_User_Account;
+import com.raven.service.Service;
+
 import java.awt.Color;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -15,10 +17,18 @@ public class Item_People extends javax.swing.JPanel {
     private final Model_User_Account user;
 
     public Item_People(Model_User_Account user) {
-        this.user = user;
         initComponents();
-        lb.setText(user.getUserName());
-        activeStatus.setActive(user.isStatus());
+        this.user = user;
+        // 유저 데이터가 있을 때만 이름을 세팅하도록 변경
+        if (user != null) {
+            lb.setText(user.getUserName());
+
+            if (user.getUserID() == Service.getInstance().getUser().getUserID()) {
+                lb.setForeground(new java.awt.Color(0, 102, 255));
+            }
+        } else {
+            lb.setText("알 수 없는 사용자");
+        }
         init();
     }
 

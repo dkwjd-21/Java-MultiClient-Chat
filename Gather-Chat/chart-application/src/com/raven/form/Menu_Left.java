@@ -4,6 +4,7 @@ import com.raven.component.Item_People;
 import com.raven.event.EventMenuLeft;
 import com.raven.event.PublicEvent;
 import com.raven.model.Model_User_Account;
+import com.raven.service.Service;
 import com.raven.swing.ScrollBar;
 import java.awt.Component;
 import java.util.ArrayList;
@@ -21,59 +22,149 @@ public class Menu_Left extends javax.swing.JPanel {
 
     private void init() {
         sp.setVerticalScrollBar(new ScrollBar());
+        // 리스트 레이아웃 설정
         menuList.setLayout(new MigLayout("fillx", "0[]0", "0[]0"));
         userAccount = new ArrayList<>();
+
+        // [1] 상단 탭 텍스트 제목 추가
+        menu.removeAll();
+        menu.setLayout(new MigLayout("fill", "15[]10", "10[]10"));
+
+        javax.swing.JLabel title = new javax.swing.JLabel("접속자 목록");
+        title.setFont(new java.awt.Font("맑은 고딕", 1, 14));
+        title.setForeground(new java.awt.Color(51, 51, 51));
+
+        menu.add(title); // 텍스트 추가
+        menu.revalidate();
+        menu.repaint();
+
+        // 메인 이벤트 리스너: 입장이 완료되면 실행됨
         PublicEvent.getInstance().addEventMenuLeft(new EventMenuLeft() {
             @Override
             public void newUser(List<Model_User_Account> users) {
-                for (Model_User_Account d : users) {
-                    userAccount.add(d);
-                    menuList.add(new Item_People(d), "wrap");
-                    refreshMenuList();
+                userAccount = new ArrayList<>(users);
+
+                Model_User_Account mySelf = Service.getInstance().getUser();
+
+                if (menuList.getComponentCount() == 0 && mySelf != null) {
+                    setMySelf(mySelf);
                 }
+
+                List<Model_User_Account> pureOthers = new ArrayList<>();
+                for (Model_User_Account u : users) {
+                    if (mySelf != null && u.getUserID() != mySelf.getUserID()) {
+                        pureOthers.add(u);
+                    }
+                }
+
+                // 4. 타인 리스트 갱신
+                updateOtherUsers(pureOthers);
             }
 
             @Override
-            public void userConnect(int userID) {
-                for (Model_User_Account u : userAccount) {
-                    if (u.getUserID() == userID) {
-                        u.setStatus(true);
-                        PublicEvent.getInstance().getEventMain().updateUser(u);
-                        break;
-                    }
-                }
-                if (menuMessage.isSelected()) {
-                    for (Component com : menuList.getComponents()) {
-                        Item_People item = (Item_People) com;
-                        if (item.getUser().getUserID() == userID) {
-                            item.updateStatus();
-                            break;
-                        }
-                    }
-                }
+            public void userConnect(int id) {
+                // [추가] 새로 들어온 유저가 있으면 리스트 끝에 붙이기
+                // Service나 서버로부터 받은 유저 객체가 있다면 addUser(user) 호출
             }
 
             @Override
-            public void userDisconnect(int userID) {
-                for (Model_User_Account u : userAccount) {
-                    if (u.getUserID() == userID) {
-                        u.setStatus(false);
-                        PublicEvent.getInstance().getEventMain().updateUser(u);
-                        break;
-                    }
-                }
-                if (menuMessage.isSelected()) {
-                    for (Component com : menuList.getComponents()) {
-                        Item_People item = (Item_People) com;
-                        if (item.getUser().getUserID() == userID) {
-                            item.updateStatus();
-                            break;
-                        }
-                    }
-                }
+            public void userDisconnect(int id) {
+                // [삭제] 나간 유저가 있으면 리스트에서 즉시 제거
+                removeUser(id);
             }
         });
-        showMessage();
+    }
+
+    // 로그인 직후 '나'를 딱 한 번만 추가하는 메소드
+    public void setMySelf(Model_User_Account mySelf) {
+        menuList.removeAll(); // 초기화 시점에만 전체 삭제
+
+        // [추적 로그 추가]
+        System.out.println("==========================================");
+        System.out.println("로그 [원본 mySelf]: " + mySelf.getUserName() + " (Hash: " + System.identityHashCode(mySelf) + ")");
+
+        Model_User_Account me = new Model_User_Account(
+                mySelf.getUserID(),
+                mySelf.getUserName() + " (나)",
+                mySelf.getGender(),
+                mySelf.getImage(),
+                true
+        );
+
+        System.out.println("로그 [생성된 me]: " + me.getUserName() + " (Hash: " + System.identityHashCode(me) + ")");
+        System.out.println("==========================================");
+
+        // 첫 번째(index 0)에 '나'를 고정
+        menuList.add(new com.raven.component.Item_People(me), "wrap, x 0, y 0");
+
+        menuList.revalidate();
+        menuList.repaint();
+        System.out.println("로그: 내 정보가 리스트 최상단에 고정되었습니다.");
+    }
+
+    // 본인을 제외한 나머지 인원만 갱신하는 메소드
+    public void updateOtherUsers(List<Model_User_Account> users) {
+        Model_User_Account mySelf = Service.getInstance().getUser();
+
+        // index 0(나)만 남기고 나머지(타인들)를 지움
+        // menuList의 컴포넌트가 1개보다 많을 때만 작동
+        while (menuList.getComponentCount() > 1) {
+            menuList.remove(1); // 1번 인덱스부터 끝까지 계속 지움
+        }
+
+        // 전달받은 리스트를 순회하며 그대로 추가
+        if (users != null) {
+            for (Model_User_Account u : users) {
+                // 외부에서 필터링해서 줬으므로 여기서 중복 체크(if)는 생략
+                menuList.add(new com.raven.component.Item_People(u), "wrap");
+            }
+        }
+
+        menuList.revalidate();
+        menuList.repaint();
+        System.out.println("로그: 타인 리스트만 갱신 완료 (나의 항목은 유지됨)");
+    }
+
+    // 나간 사람만 리스트에서 빼기
+    private void removeUser(int userID) {
+        for (Component com : menuList.getComponents()) {
+            if (com instanceof Item_People) {
+                Item_People item = (Item_People) com;
+                if (item.getUser().getUserID() == userID) {
+                    menuList.remove(com); // 화면에서 삭제
+                    break;
+                }
+            }
+        }
+        menuList.revalidate();
+        menuList.repaint();
+        System.out.println("로그: 유저 퇴장(ID: " + userID + ") - 리스트에서 제거됨");
+    }
+
+    private void updateStatus(int id, boolean s) {
+        Model_User_Account mySelf = Service.getInstance().getUser();
+        List<Model_User_Account> pureOthers = new ArrayList<>();
+
+        // 이미 추가한 유저 ID를 추적해서 중복 방지
+        List<Integer> addedIds = new ArrayList<>();
+
+        for (Model_User_Account u : userAccount) {
+            if (u.getUserID() == id) {
+                u.setStatus(s);
+            }
+
+            // 1. 나(mySelf)는 제외
+            // 2. 이미 pureOthers에 담긴 ID가 아닐 때만 추가
+            if (mySelf != null && u.getUserID() != mySelf.getUserID()) {
+                if (!addedIds.contains(u.getUserID())) {
+                    pureOthers.add(u);
+                    addedIds.add(u.getUserID());
+                }
+            }
+        }
+
+        // 이제 정말로 깨끗한 1인 1계정 명단만 전달됨
+        updateOtherUsers(pureOthers);
     }
 
     private void showMessage() {
@@ -205,21 +296,26 @@ public class Menu_Left extends javax.swing.JPanel {
     }//GEN-LAST:event_menuMessageActionPerformed
 
     private void menuGroupActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_menuGroupActionPerformed
+        /*
         if (!menuGroup.isSelected()) {
             menuMessage.setSelected(false);
             menuGroup.setSelected(true);
             menuBox.setSelected(false);
             showGroup();
         }
+        */
+        System.out.println("단체 채팅방 모드 활성화");
     }//GEN-LAST:event_menuGroupActionPerformed
 
     private void menuBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_menuBoxActionPerformed
+       /*
         if (!menuBox.isSelected()) {
             menuMessage.setSelected(false);
             menuGroup.setSelected(false);
             menuBox.setSelected(true);
             showBox();
         }
+        */
     }//GEN-LAST:event_menuBoxActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

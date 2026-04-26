@@ -85,12 +85,17 @@ public class Panel_More extends javax.swing.JPanel {
                 if (option == JFileChooser.APPROVE_OPTION) {
                     File files[] = ch.getSelectedFiles();
                     try {
+                        // 이미지 메시지 생성 및 전송 로직 주석 처리
+                        /*
                         for (File file : files) {
                             Model_Send_Message message = new Model_Send_Message(MessageType.IMAGE, Service.getInstance().getUser().getUserID(), user.getUserID(), "");
                             Service.getInstance().addFile(file, message);
                             PublicEvent.getInstance().getEventChat().sendMessage(message);
                         }
-                    } catch (IOException e) {
+                         */
+
+                        javax.swing.JOptionPane.showMessageDialog(null, "이미지 전송 기능은 현재 리팩토링 중입니다.");
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
                 }

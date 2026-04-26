@@ -121,7 +121,7 @@ public class Model_File_Receiver {
                         close();
                         event.onFinish(new File(PATH_FILE + fileID + fileExtention));
                         //  remove list
-                        Service.getInstance().fileReceiveFinish(Model_File_Receiver.this);
+                        // Service.getInstance().fileReceiveFinish(Model_File_Receiver.this);
                     }
                 } catch (IOException | JSONException e) {
                     e.printStackTrace();

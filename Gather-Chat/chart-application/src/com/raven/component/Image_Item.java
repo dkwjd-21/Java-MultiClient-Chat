@@ -45,6 +45,9 @@ public class Image_Item extends javax.swing.JLayeredPane {
         img.setRGB(0, 0, width, height, data, 0, width);
         Icon icon = new ImageIcon(img);
         pic.setImage(icon);
+
+        // 아래의 Service 호출 부분을 통째로 주석 처리
+        /*
         try {
             Service.getInstance().addFileReceiver(dataImage.getFileID(), new EventFileReceiver() {
                 @Override
@@ -66,6 +69,7 @@ public class Image_Item extends javax.swing.JLayeredPane {
         } catch (IOException e) {
             e.printStackTrace();
         }
+         */
     }
 
     @SuppressWarnings("unchecked")
