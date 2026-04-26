@@ -20,6 +20,9 @@ public class Main extends javax.swing.JFrame {
 
     private static Main instance;
 
+    // 테스트용 고정 이름 변수
+    public static String TEST_NAME = "";
+
     public Main() {
         instance = this;
         initComponents();
@@ -49,16 +52,23 @@ public class Main extends javax.swing.JFrame {
         initEvent();
 
         // [3] 닉네임 입력 및 로그인
-        /*
-        String userName = javax.swing.JOptionPane.showInputDialog(this,
-                "Gather-Chat에 오신 것을 환영합니다!\n사용하실 닉네임을 입력해주세요.",
-                "입장하기",
-                javax.swing.JOptionPane.PLAIN_MESSAGE);
-         */
 
-        // [테스트용] 실행할 때마다 랜덤 이름으로 자동 입장
-        String userName = "TestUser_" + System.currentTimeMillis() % 1000;
+        String userName;
 
+        if (TEST_NAME != null && !TEST_NAME.trim().isEmpty()) {
+            // 외부(TestLauncher 등)에서 이름을 미리 지정한 경우 팝업 없이 진행
+            userName = TEST_NAME;
+            System.out.println("로그: 테스트 모드 자동 입장 (" + userName + ")");
+            TEST_NAME = ""; // 다음 인스턴스를 위해 초기화
+        } else {
+            // 일반 실행 시 팝업창 띄우기
+            userName = javax.swing.JOptionPane.showInputDialog(this,
+                    "Gather-Chat에 오신 것을 환영합니다!\n사용하실 닉네임을 입력해주세요.",
+                    "입장하기",
+                    javax.swing.JOptionPane.PLAIN_MESSAGE);
+        }
+
+        // 공백이나 취소 클릭 시 익명 처리
         if (userName == null || userName.trim().isEmpty()) {
             userName = "익명유저" + (int)(Math.random() * 1000);
         }

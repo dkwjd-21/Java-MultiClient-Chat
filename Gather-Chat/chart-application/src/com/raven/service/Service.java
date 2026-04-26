@@ -74,6 +74,8 @@ public class Service {
                         // 오프라인 표시
                         PublicEvent.getInstance().getEventMenuLeft().userDisconnect(userID);
                     }
+
+
                 }
             });
 

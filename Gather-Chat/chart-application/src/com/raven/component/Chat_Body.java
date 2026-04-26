@@ -4,6 +4,7 @@ import com.raven.app.MessageType;
 import com.raven.emoji.Emogi;
 import com.raven.model.Model_Receive_Message;
 import com.raven.model.Model_Send_Message;
+import com.raven.service.Service;
 import com.raven.swing.ScrollBar;
 import java.awt.Adjustable;
 import java.awt.Color;
@@ -46,6 +47,17 @@ public class Chat_Body extends javax.swing.JPanel {
         // Main을 통해 Menu_Left에 접근해서 해당 ID의 이름을 가져옵니다.
         String userName = com.raven.main.Main.getMenuLeft().getUserNameById(data.getFromUserID());
 
+        // 2. [방어 로직] 만약 리스트에 없다면?
+        if (userName.equals("알 수 없는 사용자")) {
+            // 혹시 보낸 사람이 '나' 인지 확인 (가끔 서버 루프로 내가 보낸 게 나한테 올 때)
+            if (data.getFromUserID() == Service.getInstance().getUser().getUserID()) {
+                userName = Service.getInstance().getUser().getUserName();
+            } else {
+                // 그래도 없다면 ID라도 표시 (디버깅용)
+                userName = "User_" + data.getFromUserID();
+            }
+        }
+
         if (data.getMessageType() == MessageType.TEXT) {
             item.setText(data.getText());
         } else if (data.getMessageType() == MessageType.EMOJI) {
@@ -55,7 +67,7 @@ public class Chat_Body extends javax.swing.JPanel {
             item.setImage(data.getDataImage());
         }
 
-        // 2. 공통 정보 세팅 (찾아온 userName을 직접 넣어줍니다)
+        // 3. 공통 정보 세팅 (찾아온 userName을 직접 넣어줍니다)
         item.setUserProfile(userName);
         item.setTime(fullTime);
 

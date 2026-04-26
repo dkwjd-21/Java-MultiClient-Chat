@@ -42,14 +42,18 @@ public class Menu_Left extends javax.swing.JPanel {
         PublicEvent.getInstance().addEventMenuLeft(new EventMenuLeft() {
             @Override
             public void newUser(List<Model_User_Account> users) {
-                userAccount = new ArrayList<>(users);
+                userAccount = new ArrayList<>(users); // 전체 명단 저장 (이름 찾기용)
 
                 Model_User_Account mySelf = Service.getInstance().getUser();
 
-                if (menuList.getComponentCount() == 0 && mySelf != null) {
+                menuList.removeAll();
+
+                // '나'를 최상단에 고정
+                if (mySelf != null) {
                     setMySelf(mySelf);
                 }
 
+                // 나를 제외한 나머지 사람들만 골라내기
                 List<Model_User_Account> pureOthers = new ArrayList<>();
                 for (Model_User_Account u : users) {
                     if (mySelf != null && u.getUserID() != mySelf.getUserID()) {
@@ -57,7 +61,7 @@ public class Menu_Left extends javax.swing.JPanel {
                     }
                 }
 
-                // 4. 타인 리스트 갱신
+                //  타인 리스트 추가
                 updateOtherUsers(pureOthers);
             }
 
@@ -104,14 +108,6 @@ public class Menu_Left extends javax.swing.JPanel {
 
     // 본인을 제외한 나머지 인원만 갱신하는 메소드
     public void updateOtherUsers(List<Model_User_Account> users) {
-        Model_User_Account mySelf = Service.getInstance().getUser();
-
-        // index 0(나)만 남기고 나머지(타인들)를 지움
-        // menuList의 컴포넌트가 1개보다 많을 때만 작동
-        while (menuList.getComponentCount() > 1) {
-            menuList.remove(1); // 1번 인덱스부터 끝까지 계속 지움
-        }
-
         // 전달받은 리스트를 순회하며 그대로 추가
         if (users != null) {
             for (Model_User_Account u : users) {
