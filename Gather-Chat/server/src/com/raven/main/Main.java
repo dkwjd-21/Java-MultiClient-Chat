@@ -65,9 +65,9 @@ public class Main extends javax.swing.JFrame {
      */
     private void formWindowOpened(java.awt.event.WindowEvent evt) {
         try {
-            // 메모리 세션 방식이므로 DB 연결은 생략
-            // DatabaseConnection.getInstance().connectToDatabase();
-            // txt.append("Connect to Database ...\n");
+            // 서버 켜지자마자 SQLite DB 커널 초기화 및 테이블 3개 자동 빌드
+            com.raven.service.DatabaseManager.getInstance();
+            txt.append("[DB LOG] SQLite 인프라 및 3개 테이블 연결 완료!\n");
 
             /* * 실시간 채팅 서비스 가동
              * Service 클래스에 로그를 찍을 txt 창을 넘겨주고 서버를 시작

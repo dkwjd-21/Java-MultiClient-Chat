@@ -2,6 +2,12 @@ package com.raven.model;
 
 public class Model_Receive_Message {
 
+    private int messageType;
+    private int fromUserID;
+    private String text;
+    private Model_Receive_Image dataImage;
+    private String roomID;
+
     public int getMessageType() {
         return messageType;
     }
@@ -34,6 +40,21 @@ public class Model_Receive_Message {
         this.dataImage = dataImage;
     }
 
+    public String getRoomID() {
+        return roomID;
+    }
+
+    public void setRoomID(String roomID) {
+        this.roomID = roomID;
+    }
+
+    public Model_Receive_Message(int messageType, int fromUserID, String text, String roomID) {
+        this.messageType = messageType;
+        this.fromUserID = fromUserID;
+        this.text = text;
+        this.roomID = roomID;
+    }
+
     public Model_Receive_Message(int messageType, int fromUserID, String text, Model_Receive_Image dataImage) {
         this.messageType = messageType;
         this.fromUserID = fromUserID;
@@ -43,9 +64,4 @@ public class Model_Receive_Message {
 
     public Model_Receive_Message() {
     }
-
-    private int messageType;
-    private int fromUserID;
-    private String text;
-    private Model_Receive_Image dataImage;
 }

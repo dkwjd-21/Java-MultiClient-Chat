@@ -3,87 +3,136 @@ package com.raven.form;
 import com.raven.component.Item_People;
 import com.raven.event.EventMenuLeft;
 import com.raven.event.PublicEvent;
+import com.raven.model.Model_Room;
 import com.raven.model.Model_User_Account;
 import com.raven.service.Service;
 import com.raven.swing.ScrollBar;
 import java.awt.Component;
+import java.awt.Font;
+import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
+import javax.swing.JLabel;
 import net.miginfocom.swing.MigLayout;
 
 public class Menu_Left extends javax.swing.JPanel {
 
     private List<Model_User_Account> userAccount;
+    private JLabel titleLabel; // 동적 타이틀 변경을 위해 변수로 승격
 
     public Menu_Left() {
         initComponents();
         init();
     }
 
+    private boolean isRoomMode = false; // 현재 방 목록 모드인지 추적하는 플래그 변수
+
     private void init() {
         sp.setVerticalScrollBar(new ScrollBar());
-        // 리스트 레이아웃 설정
         menuList.setLayout(new MigLayout("fillx", "0[]0", "0[]0"));
         userAccount = new ArrayList<>();
 
-        // [1] 상단 탭 텍스트 제목 추가
+        // 상단 탭 레이아웃 동적 셋업 (MigLayout 속성을 활용해 가로로 배치)
         menu.removeAll();
-        menu.setLayout(new MigLayout("fill", "15[]10", "10[]10"));
+        menu.setLayout(new MigLayout("fillx", "10[]10[]10", "10[]10"));
 
-        javax.swing.JLabel title = new javax.swing.JLabel("접속자 목록");
-        title.setFont(new java.awt.Font("맑은 고딕", 1, 14));
-        title.setForeground(new java.awt.Color(51, 51, 51));
+        // 1. 토글 레이블
+        titleLabel = new JLabel("접속자 목록 🔄");
+        titleLabel.setFont(new Font("맑은 고딕", 1, 14));
+        titleLabel.setForeground(new Color(40, 120, 240));
+        titleLabel.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
 
-        menu.add(title); // 텍스트 추가
+        // 2. ➕ 방 추가 버튼 생성
+        javax.swing.JButton btnAddRoom = new javax.swing.JButton("➕ 방만들기");
+        btnAddRoom.setFont(new Font("맑은 고딕", 1, 11));
+        btnAddRoom.setBackground(new Color(240, 240, 240));
+        btnAddRoom.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+
+        // [이벤트 A] 토글 레이블 클릭 시 모드 전환
+        titleLabel.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                if (isRoomMode) {
+                    titleLabel.setText("접속자 목록 🔄");
+                    titleLabel.setForeground(new Color(40, 120, 240));
+                    isRoomMode = false;
+                    refreshUserList(userAccount);
+                } else {
+                    titleLabel.setText("채팅방 목록 🔄");
+                    titleLabel.setForeground(new Color(220, 80, 80));
+                    isRoomMode = true;
+                    showRESTRoomList();
+                }
+            }
+        });
+
+        // [이벤트 B] ➕ 방만들기 버튼 클릭 시 팝업 띄우기
+        btnAddRoom.addActionListener(e -> {
+            String newRoomName = javax.swing.JOptionPane.showInputDialog(this,
+                    "새로 개설할 채팅방 이름을 입력해 주세요.",
+                    "새 방 만들기",
+                    javax.swing.JOptionPane.PLAIN_MESSAGE);
+
+            if (newRoomName != null && !newRoomName.trim().isEmpty()) {
+                // 소켓을 통해 서버에 방 생성 요청 이벤트
+                Service.getInstance().getClient().emit("create_room", newRoomName.trim());
+
+                // UX 센스: 방을 만들었으니 자동으로 방 목록 탭으로 전환해서 보여주기
+                titleLabel.setText("채팅방 목록 🔄");
+                titleLabel.setForeground(new Color(220, 80, 80));
+                isRoomMode = true;
+
+                // 서버가 DB에 반영할 시간을 잠시 주기 위해 0.2초 뒤 리스트 새로고침
+                java.awt.EventQueue.invokeLater(() -> {
+                    try { Thread.sleep(200); } catch(Exception ex){}
+                    showRESTRoomList();
+                });
+            }
+        });
+
+        menu.add(titleLabel, "aligny center");
+        menu.add(btnAddRoom, "gapleft push, aligny center");
         menu.revalidate();
         menu.repaint();
 
-        // 메인 이벤트 리스너: 입장이 완료되면 실행됨
+        // 메인 소켓 이벤트 연동 핸들러
         PublicEvent.getInstance().addEventMenuLeft(new EventMenuLeft() {
             @Override
             public void newUser(List<Model_User_Account> users) {
-                userAccount = new ArrayList<>(users); // 전체 명단 저장 (이름 찾기용)
-
-                Model_User_Account mySelf = Service.getInstance().getUser();
-
-                menuList.removeAll();
-
-                // '나'를 최상단에 고정
-                if (mySelf != null) {
-                    setMySelf(mySelf);
-                }
-
-                // 나를 제외한 나머지 사람들만 골라내기
-                List<Model_User_Account> pureOthers = new ArrayList<>();
-                for (Model_User_Account u : users) {
-                    if (mySelf != null && u.getUserID() != mySelf.getUserID()) {
-                        pureOthers.add(u);
-                    }
-                }
-
-                //  타인 리스트 추가
-                updateOtherUsers(pureOthers);
+                userAccount = new ArrayList<>(users);
+                if (isRoomMode) return;
+                refreshUserList(users);
             }
 
             @Override
-            public void userConnect(int id) {
-                // [추가] 새로 들어온 유저가 있으면 리스트 끝에 붙이기
-                // Service나 서버로부터 받은 유저 객체가 있다면 addUser(user) 호출
-            }
+            public void userConnect(int id) {}
 
             @Override
             public void userDisconnect(int id) {
-                // [삭제] 나간 유저가 있으면 리스트에서 즉시 제거
                 removeUser(id);
             }
         });
     }
 
-    // 로그인 직후 '나'를 딱 한 번만 추가하는 메소드
-    public void setMySelf(Model_User_Account mySelf) {
-        menuList.removeAll(); // 초기화 시점에만 전체 삭제
+    // 순수 접속 유저 명단을 그리는 로직 분리
+    private void refreshUserList(List<Model_User_Account> users) {
+        Model_User_Account mySelf = Service.getInstance().getUser();
+        menuList.removeAll();
 
-        // [추적 로그 추가]
+        if (mySelf != null) {
+            setMySelf(mySelf);
+        }
+
+        List<Model_User_Account> pureOthers = new ArrayList<>();
+        for (Model_User_Account u : users) {
+            if (mySelf != null && u.getUserID() != mySelf.getUserID()) {
+                pureOthers.add(u);
+            }
+        }
+        updateOtherUsers(pureOthers);
+    }
+
+    public void setMySelf(Model_User_Account mySelf) {
         System.out.println("==========================================");
         System.out.println("로그 [원본 mySelf]: " + mySelf.getUserName() + " (Hash: " + System.identityHashCode(mySelf) + ")");
 
@@ -98,42 +147,61 @@ public class Menu_Left extends javax.swing.JPanel {
         System.out.println("로그 [생성된 me]: " + me.getUserName() + " (Hash: " + System.identityHashCode(me) + ")");
         System.out.println("==========================================");
 
-        // 첫 번째(index 0)에 '나'를 고정
-        menuList.add(new com.raven.component.Item_People(me), "wrap, x 0, y 0");
-
-        menuList.revalidate();
-        menuList.repaint();
+        menuList.add(new Item_People(me), "wrap, x 0, y 0");
+        refreshMenuList();
         System.out.println("로그: 내 정보가 리스트 최상단에 고정되었습니다.");
     }
 
-    // 본인을 제외한 나머지 인원만 갱신하는 메소드
     public void updateOtherUsers(List<Model_User_Account> users) {
-        // 전달받은 리스트를 순회하며 그대로 추가
         if (users != null) {
             for (Model_User_Account u : users) {
-                // 외부에서 필터링해서 줬으므로 여기서 중복 체크(if)는 생략
-                menuList.add(new com.raven.component.Item_People(u), "wrap");
+                menuList.add(new Item_People(u), "wrap");
             }
         }
-
-        menuList.revalidate();
-        menuList.repaint();
+        refreshMenuList();
         System.out.println("로그: 타인 리스트만 갱신 완료 (나의 항목은 유지됨)");
     }
 
-    // 나간 사람만 리스트에서 빼기
+    // REST API로 가져온 방 리스트를 화면에 바인딩하는 전용 함수
+    private void showRESTRoomList() {
+        menuList.removeAll();
+        titleLabel.setText("개설된 채팅방 목록");
+
+        // 서버 REST API로부터 룸 객체 리스트 수신
+        List<Model_Room> rooms = Service.getInstance().getRoomListFromREST();
+
+        for (Model_Room room : rooms) {
+            Model_User_Account roomData = new Model_User_Account(0, room.getRoomName(), "", "", true);
+
+            roomData.setImage(room.getRoomID());
+
+            Item_People roomItem = new Item_People(roomData);
+            roomItem.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+
+            roomItem.addMouseListener(new java.awt.event.MouseAdapter() {
+                @Override
+                public void mouseClicked(java.awt.event.MouseEvent evt) {
+                    PublicEvent.getInstance().getEventMain().selectUser(roomData);
+                }
+            });
+
+            menuList.add(roomItem, "wrap");
+        }
+        refreshMenuList();
+        System.out.println("로그 [UI]: 서버 REST API로부터 " + rooms.size() + "개의 찐 방 데이터 매핑 완료.");
+    }
+
     private void removeUser(int userID) {
         for (Component com : menuList.getComponents()) {
             if (com instanceof Item_People) {
                 Item_People item = (Item_People) com;
                 if (item.getUser().getUserID() == userID) {
-                    menuList.remove(com); // 화면에서 삭제
+                    menuList.remove(com);
                     break;
                 }
             }
         }
-        menuList.revalidate();
-        menuList.repaint();
+        refreshMenuList();
         System.out.println("로그: 유저 퇴장(ID: " + userID + ") - 리스트에서 제거됨");
     }
 
@@ -143,65 +211,12 @@ public class Menu_Left extends javax.swing.JPanel {
                 return u.getUserName();
             }
         }
-        return "알 수 없는 사용자"; // 명단에 없을 때 대비
-    }
-
-    private void updateStatus(int id, boolean s) {
-        Model_User_Account mySelf = Service.getInstance().getUser();
-        List<Model_User_Account> pureOthers = new ArrayList<>();
-
-        // 이미 추가한 유저 ID를 추적해서 중복 방지
-        List<Integer> addedIds = new ArrayList<>();
-
-        for (Model_User_Account u : userAccount) {
-            if (u.getUserID() == id) {
-                u.setStatus(s);
-            }
-
-            // 1. 나(mySelf)는 제외
-            // 2. 이미 pureOthers에 담긴 ID가 아닐 때만 추가
-            if (mySelf != null && u.getUserID() != mySelf.getUserID()) {
-                if (!addedIds.contains(u.getUserID())) {
-                    pureOthers.add(u);
-                    addedIds.add(u.getUserID());
-                }
-            }
-        }
-
-        // 이제 정말로 깨끗한 1인 1계정 명단만 전달됨
-        updateOtherUsers(pureOthers);
-    }
-
-    private void showMessage() {
-        //  test data
-        menuList.removeAll();
-        for (Model_User_Account d : userAccount) {
-            menuList.add(new Item_People(null), "wrap");
-        }
-        refreshMenuList();
-    }
-
-    private void showGroup() {
-        //  test data
-        menuList.removeAll();
-        for (int i = 0; i < 5; i++) {
-            menuList.add(new Item_People(null), "wrap");
-        }
-        refreshMenuList();
-    }
-
-    private void showBox() {
-        //  test data
-        menuList.removeAll();
-        for (int i = 0; i < 10; i++) {
-            menuList.add(new Item_People(null), "wrap");
-        }
-        refreshMenuList();
+        return "알 수 없는 사용자";
     }
 
     private void refreshMenuList() {
-        menuList.repaint();
         menuList.revalidate();
+        menuList.repaint();
     }
 
     @SuppressWarnings("unchecked")
@@ -261,12 +276,12 @@ public class Menu_Left extends javax.swing.JPanel {
         javax.swing.GroupLayout menuListLayout = new javax.swing.GroupLayout(menuList);
         menuList.setLayout(menuListLayout);
         menuListLayout.setHorizontalGroup(
-            menuListLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 0, Short.MAX_VALUE)
+                menuListLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGap(0, 0, Short.MAX_VALUE)
         );
         menuListLayout.setVerticalGroup(
-            menuListLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 576, Short.MAX_VALUE)
+                menuListLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGap(0, 576, Short.MAX_VALUE)
         );
 
         sp.setViewportView(menuList);
@@ -274,20 +289,20 @@ public class Menu_Left extends javax.swing.JPanel {
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(menu, javax.swing.GroupLayout.DEFAULT_SIZE, 200, Short.MAX_VALUE)
-            .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(sp)
-                .addContainerGap())
+                layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addComponent(menu, javax.swing.GroupLayout.DEFAULT_SIZE, 200, Short.MAX_VALUE)
+                        .addGroup(layout.createSequentialGroup()
+                                .addContainerGap()
+                                .addComponent(sp)
+                                .addContainerGap())
         );
         layout.setVerticalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addComponent(menu, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(sp)
-                .addContainerGap())
+                layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(layout.createSequentialGroup()
+                                .addComponent(menu, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(sp)
+                                .addContainerGap())
         );
     }// </editor-fold>//GEN-END:initComponents
 
@@ -296,31 +311,24 @@ public class Menu_Left extends javax.swing.JPanel {
             menuMessage.setSelected(true);
             menuGroup.setSelected(false);
             menuBox.setSelected(false);
-            showMessage();
+            titleLabel.setText("접속자 목록");
+            refreshUserList(userAccount);
         }
     }//GEN-LAST:event_menuMessageActionPerformed
 
+    // 두 번째 탭 단추(사람 세 명 아이콘) 클릭 시 비연결성 REST API 쿼리를 작동시킴
     private void menuGroupActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_menuGroupActionPerformed
-        /*
         if (!menuGroup.isSelected()) {
             menuMessage.setSelected(false);
             menuGroup.setSelected(true);
             menuBox.setSelected(false);
-            showGroup();
+
+            // 수동 더미 렌더러 대신 우리가 빌드한 찐 REST 런타임 활성화
+            showRESTRoomList();
         }
-        */
-        System.out.println("단체 채팅방 모드 활성화");
     }//GEN-LAST:event_menuGroupActionPerformed
 
     private void menuBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_menuBoxActionPerformed
-       /*
-        if (!menuBox.isSelected()) {
-            menuMessage.setSelected(false);
-            menuGroup.setSelected(false);
-            menuBox.setSelected(true);
-            showBox();
-        }
-        */
     }//GEN-LAST:event_menuBoxActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

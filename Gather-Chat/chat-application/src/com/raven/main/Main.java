@@ -79,26 +79,39 @@ public class Main extends javax.swing.JFrame {
         // [4] 서버 연결
         Service.getInstance().startServer();
 
+        // 서버의 수락/거절 응답(Ack) 판별
         Service.getInstance().getClient().emit("login", userName, (Ack) os -> {
             if (os.length > 0 && (boolean) os[0]) {
+                // [성공 케이스] 중복 통과 시 정상 진입 프로세스 실행
                 Model_User_Account loginUser = new Model_User_Account(os[1]);
                 Service.getInstance().setUser(loginUser);
 
                 java.awt.EventQueue.invokeLater(() -> {
-                    // 로그인 성공 직후 서버에 접속유저 리스트 요청
+                    // 로그인 성공 직후 서버에 접속유저 리스트 요청 및 채팅창 이니셜라이즈
                     Service.getInstance().getClient().emit("list_user", loginUser.getUserID());
                     PublicEvent.getInstance().getEventMain().initChat();
+
+                    Model_User_Account groupChat = new Model_User_Account(0, "Gather-Chat 광장", "", "", true);
+                    home.setUser(groupChat);
                 });
+            } else {
+                // [실패 케이스] 중복 걸렸을 때 처리
+                String reason = os.length > 1 ? os[1].toString() : "";
+
+                if ("FAIL_DUPLICATE".equals(reason)) {
+                    // UX 디테일: 유저에게 중복 알림 팝업 발생 후 프로그램 종료 또는 재입장 유도
+                    java.awt.EventQueue.invokeLater(() -> {
+                        javax.swing.JOptionPane.showMessageDialog(this,
+                                "이미 존재하는 닉네임입니다!\n다른 닉네임으로 다시 로그인해 주세요.",
+                                "입장 거부",
+                                javax.swing.JOptionPane.WARNING_MESSAGE);
+
+                        // 현재 창 닫고 프로세스 정리 (또는 원할 경우 복귀 설계 가능)
+                        System.exit(0);
+                    });
+                }
             }
         });
-
-        Service.getInstance().getClient().emit("list_user", user.getUserID());
-
-        // 입장 직후 메인 이벤트 실행
-        PublicEvent.getInstance().getEventMain().initChat();
-
-        Model_User_Account groupChat = new Model_User_Account(0, "Gather-Chat 광장", "", "", true);
-        home.setUser(groupChat);
 
         this.setSize(new Dimension(850, 600));
         this.revalidate();

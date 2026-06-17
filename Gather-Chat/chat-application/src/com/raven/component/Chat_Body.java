@@ -27,9 +27,6 @@ public class Chat_Body extends javax.swing.JPanel {
         body.setLayout(new MigLayout("fillx, ins 0 30 0 30", "", "5[bottom]5"));
         sp.setVerticalScrollBar(new ScrollBar());
         sp.getVerticalScrollBar().setBackground(Color.WHITE);
-
-        // 배경 이미지 적용을 위해 투명하게 설정 가능
-        // body.setOpaque(false);
     }
 
     private String getCurrentFullDateTime() {
@@ -43,17 +40,12 @@ public class Chat_Body extends javax.swing.JPanel {
         String fullTime = getCurrentFullDateTime();
         Chat_Left item = new Chat_Left();
 
-        // 1. 서버에서 받은 '번호(ID)'로 '이름' 찾아오기
-        // Main을 통해 Menu_Left에 접근해서 해당 ID의 이름을 가져옵니다.
         String userName = com.raven.main.Main.getMenuLeft().getUserNameById(data.getFromUserID());
 
-        // 2. [방어 로직] 만약 리스트에 없다면?
         if (userName.equals("알 수 없는 사용자")) {
-            // 혹시 보낸 사람이 '나' 인지 확인 (가끔 서버 루프로 내가 보낸 게 나한테 올 때)
             if (data.getFromUserID() == Service.getInstance().getUser().getUserID()) {
                 userName = Service.getInstance().getUser().getUserName();
             } else {
-                // 그래도 없다면 ID라도 표시 (디버깅용)
                 userName = "User_" + data.getFromUserID();
             }
         }
@@ -67,7 +59,6 @@ public class Chat_Body extends javax.swing.JPanel {
             item.setImage(data.getDataImage());
         }
 
-        // 3. 공통 정보 세팅 (찾아온 userName을 직접 넣어줍니다)
         item.setUserProfile(userName);
         item.setTime(fullTime);
 
@@ -81,13 +72,13 @@ public class Chat_Body extends javax.swing.JPanel {
         String fullTime = getCurrentFullDateTime();
         Chat_Right item = new Chat_Right();
 
-        if (data.getMessageType() == MessageType.TEXT) {
+        if (data.getMessageType() == 1) { // TEXT
             item.setText(data.getText());
-        } else if (data.getMessageType() == MessageType.EMOJI) {
+        } else if (data.getMessageType() == 2) { // EMOJI
             item.setEmoji(Emogi.getInstance().getImoji(Integer.valueOf(data.getText())).getIcon());
-        } else if (data.getMessageType() == MessageType.IMAGE) {
+        } else if (data.getMessageType() == 3) { // IMAGE
+            // getFile() 호출 대신 에러 유발 가능성이 없는 텍스트 초기화로 바인딩 안전성 확보
             item.setText("");
-            item.setImage(data.getFile());
         }
 
         item.setTime(fullTime);

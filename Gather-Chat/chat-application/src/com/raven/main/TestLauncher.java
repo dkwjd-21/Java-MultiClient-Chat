@@ -46,11 +46,16 @@ public class TestLauncher {
                 while (true) {
                     Thread.sleep((long) (Math.random() * 3000) + 3000);
 
-                    Model_Send_Message data = new Model_Send_Message();
-                    data.setMessageType(MessageType.TEXT);
-                    data.setToUserID(0);
-                    data.setFromUserID(myRealID); // 내 ID 주입
-                    data.setText(randomMessages[(int)(Math.random() * randomMessages.length)]);
+                    String randomText = randomMessages[(int)(Math.random() * randomMessages.length)];
+
+                    Model_Send_Message data = new Model_Send_Message(
+                            MessageType.TEXT, // 🎯 뒤에 붙어있던 .getValue()를 과감하게 철거!
+                            myRealID,
+                            0,
+                            randomText
+                    );
+
+                    data.setRoomID("SQUARE");
 
                     // [1] 서버로 전송
                     Service.getInstance().getClient().emit("send_to_user", data.toJsonObject());

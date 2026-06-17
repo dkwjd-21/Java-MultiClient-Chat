@@ -6,48 +6,30 @@ import org.json.JSONObject;
 
 public class Model_Send_Message {
 
-    public MessageType getMessageType() {
-        return messageType;
-    }
+    private int messageType;
+    private int fromUserID;
+    private int toUserID;
+    private String text;
+    private String roomID;
 
-    public void setMessageType(MessageType messageType) {
-        this.messageType = messageType;
-    }
+    public int getMessageType() { return messageType; }
+    public void setMessageType(int messageType) { this.messageType = messageType; }
 
-    public int getFromUserID() {
-        return fromUserID;
-    }
+    public int getFromUserID() { return fromUserID; }
+    public void setFromUserID(int fromUserID) { this.fromUserID = fromUserID; }
 
-    public void setFromUserID(int fromUserID) {
-        this.fromUserID = fromUserID;
-    }
+    public int getToUserID() { return toUserID; }
+    public void setToUserID(int toUserID) { this.toUserID = toUserID; }
 
-    public int getToUserID() {
-        return toUserID;
-    }
+    public String getText() { return text; }
+    public void setText(String text) { this.text = text; }
 
-    public void setToUserID(int toUserID) {
-        this.toUserID = toUserID;
-    }
+    public String getRoomID() { return roomID; }
+    public void setRoomID(String roomID) { this.roomID = roomID; }
 
-    public String getText() {
-        return text;
-    }
-
-    public void setText(String text) {
-        this.text = text;
-    }
-
-    public Model_File_Sender getFile() {
-        return file;
-    }
-
-    public void setFile(Model_File_Sender file) {
-        this.file = file;
-    }
-
+    // Chat_Bottom.java 호환용 생성자 (enum 수용)
     public Model_Send_Message(MessageType messageType, int fromUserID, int toUserID, String text) {
-        this.messageType = messageType;
+        this.messageType = messageType.getValue();
         this.fromUserID = fromUserID;
         this.toUserID = toUserID;
         this.text = text;
@@ -56,23 +38,15 @@ public class Model_Send_Message {
     public Model_Send_Message() {
     }
 
-    private MessageType messageType;
-    private int fromUserID;
-    private int toUserID;
-    private String text;
-    private Model_File_Sender file;
-
+    // 클라이언트 전용 정석 직렬화 메서드
     public JSONObject toJsonObject() {
         try {
             JSONObject json = new JSONObject();
-            json.put("messageType", messageType.getValue());
+            json.put("messageType", messageType);
             json.put("fromUserID", fromUserID);
             json.put("toUserID", toUserID);
-            if (messageType == MessageType.FILE || messageType == MessageType.IMAGE) {
-                json.put("text", file.getFileExtensions());
-            } else {
-                json.put("text", text);
-            }
+            json.put("text", text);
+            json.put("roomID", roomID);
             return json;
         } catch (JSONException e) {
             return null;

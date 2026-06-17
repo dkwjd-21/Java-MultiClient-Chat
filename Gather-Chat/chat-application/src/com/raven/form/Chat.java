@@ -10,12 +10,14 @@ import com.raven.model.Model_Send_Message;
 import com.raven.model.Model_User_Account;
 import com.raven.service.Service;
 import net.miginfocom.swing.MigLayout;
+import java.util.List;
 
 public class Chat extends javax.swing.JPanel {
 
     private Chat_Title chatTitle;
     private Chat_Body chatBody;
     private Chat_Bottom chatBottom;
+    private Model_User_Account currentRoom;
 
     public Chat() {
         initComponents();
@@ -23,43 +25,81 @@ public class Chat extends javax.swing.JPanel {
     }
 
     private void init() {
-        // 레이아웃 설정: 타이틀(상단), 바디(중앙), 바텀(하단 입력창)
         setLayout(new MigLayout("fillx", "0[fill]0", "0[]0[100%, fill]0[shrink 0]0"));
         chatTitle = new Chat_Title();
         chatBody = new Chat_Body();
         chatBottom = new Chat_Bottom();
 
-        // 채팅 이벤트 리스너 등록
         PublicEvent.getInstance().addEventChat(new EventChat() {
             @Override
             public void sendMessage(Model_Send_Message data) {
-                // 내가 보낸 메시지를 화면 오른쪽에 추가
                 chatBody.addItemRight(data);
             }
 
             @Override
             public void receiveMessage(Model_Receive_Message data) {
-                // [중요] 남이 보낸 거라면 무조건 왼쪽에 그리기!
                 if (data.getFromUserID() != Service.getInstance().getUser().getUserID()) {
-                    chatBody.addItemLeft(data);
-                    chatBody.revalidate();
-                    chatBody.repaint();
+                    if (currentRoom != null && String.valueOf(currentRoom.getImage()).equals(data.getRoomID())) {
+                        chatBody.addItemLeft(data);
+                        chatBody.revalidate();
+                        chatBody.repaint();
+                    }
                 }
             }
         });
 
         add(chatTitle, "wrap");
         add(chatBody, "wrap");
-        add(chatBottom, "h ::50%");
+        add(addChatBottom(), "h ::50%");
     }
 
-     // 유저를 선택했을 때 호출되는 메소드
-     // (단톡방 모드에서는 'Gather-Chat 전체 대화방' 등으로 타이틀을 고정할 수 있습니다)
     public void setUser(Model_User_Account user) {
-        chatTitle.setUserName(user);
+        this.currentRoom = user;
+
+        chatTitle.updateUser(user);
         chatBottom.setUser(user);
-        // 새로운 방에 들어왔을 때 이전 대화내역 삭제 (필요 시)
-        // chatBody.clearChat();
+
+        // 1. 화면 일단 초기화
+        chatBody.clearChat();
+
+        // 아직 내 로그인 정보(User)가 세팅 안 됐다면, 과거 내역 복원을 건너뛰고 리턴
+        if (Service.getInstance().getUser() == null) {
+            chatBody.revalidate();
+            chatBody.repaint();
+            return;
+        }
+
+        // 2. [신규 파이프라인] 유리가 선택한 이 방의 고유 ID를 기반으로 REST API 통신 실행!
+        String targetRoomID = (user.getImage() != null && !user.getImage().isEmpty()) ? user.getImage() : "SQUARE";
+
+        try {
+            // 서버의 REST 엔드포인트로부터 정렬된 내역 호출 명세 실행
+            List<String[]> history = Service.getInstance().getChatHistoryFromREST(targetRoomID);
+            int myUid = Service.getInstance().getUser().getUserID();
+
+            for (String[] msg : history) {
+                int fromUid = Integer.parseInt(msg[0]);
+                String text = msg[1];
+
+                if (fromUid == myUid) {
+                    Model_Send_Message legacySend = new Model_Send_Message(com.raven.app.MessageType.TEXT, myUid, 0, text);
+                    chatBody.addItemRight(legacySend);
+                } else {
+                    Model_Receive_Message legacyRecv = new Model_Receive_Message(com.raven.app.MessageType.TEXT, fromUid, text, targetRoomID);
+                    chatBody.addItemLeft(legacyRecv);
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("[REST ERROR] 과거 대화 내용 복원 프로세스 실패");
+            e.printStackTrace();
+        }
+
+        chatBody.revalidate();
+        chatBody.repaint();
+    }
+
+    private javax.swing.JPanel addChatBottom() {
+        return chatBottom;
     }
 
     public void updateUser(Model_User_Account user) {
