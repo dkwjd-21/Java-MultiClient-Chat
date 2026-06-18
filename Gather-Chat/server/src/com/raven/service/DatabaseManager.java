@@ -34,7 +34,7 @@ public class DatabaseManager {
     private void initDatabase() {
         try (Connection conn = getConnection(); Statement stmt = conn.createStatement()) {
 
-            // 1. 유저 테이블 (USERS)
+            // 1. 유저 테이블 (USERS) -> 규격 통일: user_id, username
             stmt.execute("CREATE TABLE IF NOT EXISTS USERS (" +
                     "user_id TEXT PRIMARY KEY, " +
                     "username TEXT NOT NULL, " +
@@ -83,17 +83,21 @@ public class DatabaseManager {
         return false;
     }
 
-    // 중복 체크 통과 시, 신규 유저를 DB에 영속화하는 함수
-    public void registerUser(String userId, String username) {
-        String sql = "INSERT INTO USERS (user_id, username) VALUES (?, ?)";
-        try (Connection conn = this.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    // 🎯 [완벽 수정] 테이블 정의에 맞게 쿼리 컬럼명을 user_id, username 으로 정밀 일치 매핑!
+    public void registerUser(String userID, String userName) {
+        String sql = "INSERT OR IGNORE INTO USERS (user_id, username) VALUES (?, ?)";
 
-            pstmt.setString(1, userId);
-            pstmt.setString(2, username);
+        try (Connection conn = this.getConnection();
+             java.sql.PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, userID);
+            pstmt.setString(2, userName);
+
             pstmt.executeUpdate();
-            System.out.println("[DB LOG] 신규 유저 영속화: " + username + " (" + userId + ")");
+            System.out.println("👤 [USERS 영속화 안전 통과] 로그인 처리 완료 ID: " + userID);
+
         } catch (Exception e) {
+            System.err.println("❌ [DatabaseManager] registerUser 처리 중 에러 발생");
             e.printStackTrace();
         }
     }
@@ -119,7 +123,7 @@ public class DatabaseManager {
         }
     }
 
-    // 중복 메서드 삭제 및 오직 Model_Room 기반 독립 컨텍스트 리턴
+    // 방 목록 조회
     public List<Model_Room> getRoomList() {
         List<Model_Room> rooms = new ArrayList<>();
         String sql = "SELECT room_id, room_name FROM ROOMS";

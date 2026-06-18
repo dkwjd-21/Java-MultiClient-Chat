@@ -59,33 +59,47 @@ public class Chat extends javax.swing.JPanel {
         chatTitle.updateUser(user);
         chatBottom.setUser(user);
 
-        // 1. 화면 일단 초기화
         chatBody.clearChat();
 
-        // 아직 내 로그인 정보(User)가 세팅 안 됐다면, 과거 내역 복원을 건너뛰고 리턴
+        // 아직 로그인 정보가 세팅 안 됐다면 복원 패스
         if (Service.getInstance().getUser() == null) {
             chatBody.revalidate();
             chatBody.repaint();
             return;
         }
 
-        // 2. [신규 파이프라인] 유리가 선택한 이 방의 고유 ID를 기반으로 REST API 통신 실행!
+        // 선택한 이 방의 고유 ID 추출 (비어있으면 기본 광장인 SQUARE)
         String targetRoomID = (user.getImage() != null && !user.getImage().isEmpty()) ? user.getImage() : "SQUARE";
 
         try {
-            // 서버의 REST 엔드포인트로부터 정렬된 내역 호출 명세 실행
+            // 서버의 REST API로부터 이 방의 과거 대화 리스트 수신 [[fromUserID, text], [fromUserID, text], ...]
             List<String[]> history = Service.getInstance().getChatHistoryFromREST(targetRoomID);
+
+            // 현재 로그인한 '유저'의 ID 가져오기
             int myUid = Service.getInstance().getUser().getUserID();
 
+            // 내역을 한 줄씩 돌면서 내가 보낸 건지, 남이 보낸 건지 판단해서 정렬 렌더링
             for (String[] msg : history) {
-                int fromUid = Integer.parseInt(msg[0]);
-                String text = msg[1];
+                int fromUid = Integer.parseInt(msg[0]); // 메시지를 보낸 사람의 ID
+                String text = msg[1];                   // 메시지 내용
 
                 if (fromUid == myUid) {
-                    Model_Send_Message legacySend = new Model_Send_Message(com.raven.app.MessageType.TEXT, myUid, 0, text);
+                    // 🔵 내가 보낸 메시지라면 -> 대화창 우측(Right)에 정렬 렌더링
+                    Model_Send_Message legacySend = new Model_Send_Message(
+                            com.raven.app.MessageType.TEXT,
+                            myUid,
+                            0,
+                            text
+                    );
                     chatBody.addItemRight(legacySend);
                 } else {
-                    Model_Receive_Message legacyRecv = new Model_Receive_Message(com.raven.app.MessageType.TEXT, fromUid, text, targetRoomID);
+                    // 🟢 상대방이 보낸 메시지라면 -> 대화창 좌측(Left)에 정렬 렌더링
+                    Model_Receive_Message legacyRecv = new Model_Receive_Message(
+                            com.raven.app.MessageType.TEXT,
+                            fromUid,
+                            text,
+                            targetRoomID
+                    );
                     chatBody.addItemLeft(legacyRecv);
                 }
             }
@@ -94,6 +108,7 @@ public class Chat extends javax.swing.JPanel {
             e.printStackTrace();
         }
 
+        // UI 새로고침 반영
         chatBody.revalidate();
         chatBody.repaint();
     }

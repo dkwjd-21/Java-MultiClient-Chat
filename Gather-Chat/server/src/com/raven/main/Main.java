@@ -65,21 +65,16 @@ public class Main extends javax.swing.JFrame {
      */
     private void formWindowOpened(java.awt.event.WindowEvent evt) {
         try {
-            // 서버 켜지자마자 SQLite DB 커널 초기화 및 테이블 3개 자동 빌드
             com.raven.service.DatabaseManager.getInstance();
-            txt.append("[DB LOG] SQLite 인프라 및 3개 테이블 연결 완료!\n");
+            txt.append("[DB LOG] SQLite 인프라 및 3대 테이블 연결 완료!\n");
 
-            /* * 실시간 채팅 서비스 가동
-             * Service 클래스에 로그를 찍을 txt 창을 넘겨주고 서버를 시작
-             */
             Service.getInstance(txt).startServer();
 
-            // 가동 성공 로그 출력
-            txt.append("서버가 시작되었습니다! (모드: 메모리 세션 / DB 없음)\n");
-            txt.append("현재 포트 9999에서 클라이언트 접속을 기다리는 중입니다...\n");
+            txt.append("✅ Gather-Chat 서버가 실시간 정상 가동되었습니다!\n");
+            txt.append("🖥️ [작동 모드] SQLite DB 영속화 원장 동기화 완료\n");
+            txt.append("📢 현재 포트 9999(소켓) / 8080(HTTP)에서 대기 중입니다...\n");
 
         } catch (Exception e) {
-            // 서버 가동 중 에러 발생 시 로그창에 표시
             txt.append("에러 발생 : " + e.getMessage() + "\n");
         }
     }
